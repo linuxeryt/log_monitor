@@ -1,0 +1,10 @@
+run.py
+    功能：主程序运行启动脚本，主程序脚本放在 mainpro/目下
+
+
+monitor.py 
+    功能：绘制内存和CPU的实时监控图;独立运行,和其他程序没有联系
+    python monitor.py
+
+
+   
