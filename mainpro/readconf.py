@@ -7,7 +7,7 @@ li = []
 value = {}
 
 def readconf():
-    f = open('/home/swallow/project/mainpro/zoomeye.conf','r')
+    f = open('/home/swallow/log_monitor/conf/zoomeye.conf','r')
     for line in f:
        m = re.search('[a-zA-Z]*_[a-zA-Z]*=[0-9]*',line)
        if m is not None:

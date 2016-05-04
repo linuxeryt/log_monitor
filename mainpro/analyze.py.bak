@@ -45,13 +45,13 @@ class Analyze:
 
         
         #print self.TTY_Threshold,self.Telnet_Threshold,self.Su_Time,self.Su_Threshold,self.TTY_Time
-        if isFileEmpty:
-            print
-            print 'This is a empty file.'
-            print
-            exit()
-        else:
-            self.login_failed()
+        #if isFileEmpty('/var/log/auth.log'):
+        #    print
+        #    print 'This is a empty file.'
+        #    print
+        #    exit()
+        #else:
+        self.login_failed()
 
     def login_failed(self):
         filename = '/var/log/auth.log'
@@ -82,7 +82,7 @@ class Analyze:
                         #过滤出su切换失败的记录      
                         elif self.split_list[4].split("[")[0] == 'su' and self.split_list[6] == 'authentication' and self.split_list[7] == 'failure;':
                             self.suAnalyze()
-    
+
     #tty login错误处理
     def ttyloginAnalyze(self):
         tty_fobj = open('log/tty.log','a')
@@ -139,3 +139,5 @@ class Analyze:
 
 if __name__ == '__main__':
     ex = Analyze()
+    #ex.login_failed()
+    #pass

@@ -55,56 +55,67 @@ class Analyze:
 
     def login_failed(self):
         filename = '/var/log/auth.log'
-        f = open(filename,'r')
-        tty_count = 0
-        telnet_count = 0
+        #f = open(filename,'r')
+        
+        #global tty_count
+        #global telnet_count
+        self.tty_count = 0
+        self.telnet_count = 0
         self.su_count = 0
 
-        while True:
-            content = f.readline()
-            error_log = []
-            tty = ("'/dev/tty1'","'/dev/tty2'","'/dev/tty3'","'/dev/tty4'","'/dev/tty5'","'/dev/tty6'","'/dev/tty7'")        
+        with open(filename) as f:
+            f.seek(0,2)					#直接跳到文件末尾，不检测之前的内容，配合下面的f.tell()
+            while True:
+                last_pos = f.tell()
+                content = f.readline()
+                self.grep(content)
 
-            if(content != ''):				#判断是否达到文件末尾(监听文件更新)           
-                self.split_list = content.split()
-                if self.split_list[0] == today[0] and self.split_list[1] == today[1]:		#只检测当天的日志文件
-                    if len(self.split_list) > 9:
-                        console_value = self.split_list[9].split('/')
-                    
-                        #过滤出主机本地登录错误日志，匹配关键字'LOGIN','FAILED','tty*'
-                        if 'LOGIN' == self.split_list[6] and 'FAILED' == self.split_list[5] and self.split_list[9] in tty:
-                            self.ttyloginAnalyze()
+    def grep(self,content):
+        error_log = []
+        tty = ("'/dev/tty1'","'/dev/tty2'","'/dev/tty3'","'/dev/tty4'","'/dev/tty5'","'/dev/tty6'","'/dev/tty7'")                
 
-                        #过滤出telnet连接失败记录
-                        elif ('login' in self.split_list[4].split('[')) and ('FAILED' in self.split_list[5]) and ('dev' in console_value and 'pts' in console_value):
-                            self.telnetAnalyze()
+        if(content != ''):                              #判断是否达到文件末尾(监听文件更新)           
+            self.split_list = content.split()
+            if self.split_list[0] == today[0] and self.split_list[1] == today[1]:               #只检测当天的日志文件
+                if len(self.split_list) > 9:
+                    console_value = self.split_list[9].split('/')
 
-                        #过滤出su切换失败的记录      
-                        elif self.split_list[4].split("[")[0] == 'su' and self.split_list[6] == 'authentication' and self.split_list[7] == 'failure;':
-                            self.suAnalyze()
+                    #过滤出主机本地登录错误日志，匹配关键字'LOGIN','FAILED','tty*'
+                    if 'LOGIN' == self.split_list[6] and 'FAILED' == self.split_list[5] and self.split_list[9] in tty:
+                        self.ttyloginAnalyze()
 
+                    #过滤出telnet连接失败记录
+                    elif ('login' in self.split_list[4].split('[')) and ('FAILED' in self.split_list[5]) and ('dev' in console_value and 'pts' in console_value):
+                        self.telnetAnalyze()
+
+                    #过滤出su切换失败的记录      
+                    elif self.split_list[4].split("[")[0] == 'su' and self.split_list[6] == 'authentication' and self.split_list[7] == 'failure;':
+                        self.suAnalyze()
+
+  
     #tty login错误处理
     def ttyloginAnalyze(self):
+        global start
+        global end
         tty_fobj = open('log/tty.log','a')
         Time = self.split_list[2].split(":")[0]+":"+self.split_list[2].split(":")[1]            #tty类型登录时间
         Console = self.split_list[9]                                                        #tty类型登录的虚拟控制台
         User = self.split_list[11].split(',')[0]                                                        #tty类型登录的用户
         tty_fobj.write("%s\t%s\t%s\n" % (Time,Console,User))                                #将时间,控制台,用户三个信息写入tty.log日志文件
         tty_fobj.close()
-    
-        tty_count += 1
+        self.tty_count += 1
         #60s内错误4次则为异常
-        if tty_count == 1:
+        if self.tty_count == 1:
             start = datetime.datetime.now()
-            print start
+            #print start
 
-            if tty_count == TTY_Threshold:
+            if self.tty_count == self.TTY_Threshold:
                 end = datetime.datetime.now()
                 sec = (end-start).seconds
-                print end 
-                if sec <= TTY_Time: 
-                    print colors.YELLOW + 'TTY Exception: ' + colors.ENDC
-                    tty_count = 0 
+                #print end 
+                if sec <= self.TTY_Time: 
+                    print colors.YELLOW + "TTY Exception: %s\t%s\t%s" % (Time,Console,User) + colors.ENDC
+                    self.tty_count = 0 
 
     #telnet异常
     def telnetAnalyze(self):        
@@ -130,7 +141,7 @@ class Analyze:
         if self.su_count == 1:
             start = datetime.datetime.now()
         if self.su_count == self.Su_Threshold:
-            print 'This is a test'
+            #print 'This is a test'
             end = datetime.datetime.now()
             sec = (end-start).seconds
             if sec <= self.Su_Time:
